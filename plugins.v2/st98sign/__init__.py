@@ -53,9 +53,9 @@ class st98sign(_PluginBase):
     _sign_onlyonce = False
     _reply_onlyonce = False
     _reply_fid = 103  # 默认高清中文字幕区
-    _reply_times = 1 # 添加私有属性
-    _auto_replies_str = "" # 存储原始的回复文本
-    _auto_replies = []     # 解析后的回复列表
+    _reply_times = 1  # 添加私有属性
+    _auto_replies_str = ""  # 存储原始的回复文本
+    _auto_replies = []  # 解析后的回复列表
     _history_days = 30
 
     _scheduler_sign: Optional[BackgroundScheduler] = None
@@ -122,8 +122,8 @@ class st98sign(_PluginBase):
                 try:
                     self._reply_times = int(config.get("reply_times", 1))
                     if self._reply_times < 1:
-                         logger.warning(f"配置中的 reply_times ({self._reply_times}) 无效，将使用默认值 1。")
-                         self._reply_times = 1
+                        logger.warning(f"配置中的 reply_times ({self._reply_times}) 无效，将使用默认值 1。")
+                        self._reply_times = 1
                 except (ValueError, TypeError):
                     logger.warning(f"配置中的 reply_times 无效，将使用默认值 1。原始值: {config.get('reply_times')}")
                     self._reply_times = 1
@@ -132,8 +132,8 @@ class st98sign(_PluginBase):
                 try:
                     self._history_days = int(config.get("history_days", 30))
                 except (ValueError, TypeError):
-                     logger.warning(f"配置中的 history_days 无效，将使用默认值 30。原始值: {config.get('history_days')}")
-                     self._history_days = 30
+                    logger.warning(f"配置中的 history_days 无效，将使用默认值 30。原始值: {config.get('history_days')}")
+                    self._history_days = 30
 
                 # 解析自定义回复内容
                 if self._auto_replies_str:
@@ -142,12 +142,13 @@ class st98sign(_PluginBase):
                 else:
                     self._auto_replies = list(self.DEFAULT_REPLIES)
 
-                logger.info(f"配置加载完成: enabled={self._enabled}, notify={self._notify}, host={self._host}, proxy={self._proxy}, "
-                            f"sign_cron={self._sign_cron}, reply_cron={self._reply_cron}, "
-                            f"reply_fid={self._reply_fid}, history_days={self._history_days}, "
-                            f"auto_replies_count={len(self._auto_replies)}, reply_times={self._reply_times}")
+                logger.info(
+                    f"配置加载完成: enabled={self._enabled}, notify={self._notify}, host={self._host}, proxy={self._proxy}, "
+                    f"sign_cron={self._sign_cron}, reply_cron={self._reply_cron}, "
+                    f"reply_fid={self._reply_fid}, history_days={self._history_days}, "
+                    f"auto_replies_count={len(self._auto_replies)}, reply_times={self._reply_times}")
             else:
-                 logger.warning("未接收到配置信息 (config is None)")
+                logger.warning("未接收到配置信息 (config is None)")
 
             # 处理立即执行 - 签到
             if self._sign_onlyonce:
@@ -156,9 +157,10 @@ class st98sign(_PluginBase):
                 self._scheduler_sign = BackgroundScheduler(timezone=settings.TZ)
                 # 稍微延迟几秒，确保在回复任务之后执行
                 self._scheduler_sign.add_job(func=self.sign, trigger='date',
-                                         run_date=datetime.now(tz=pytz.timezone(settings.TZ)) + timedelta(seconds=10),
-                                         id="st98sign_sign_once",
-                                         name="98堂立即签到")
+                                             run_date=datetime.now(tz=pytz.timezone(settings.TZ)) + timedelta(
+                                                 seconds=10),
+                                             id="st98sign_sign_once",
+                                             name="98堂立即签到")
                 if self._scheduler_sign.get_jobs():
                     self._scheduler_sign.start()
                 # 重置标志并更新配置
@@ -171,9 +173,10 @@ class st98sign(_PluginBase):
                 self._manual_trigger_reply = True
                 self._scheduler_reply = BackgroundScheduler(timezone=settings.TZ)
                 self._scheduler_reply.add_job(func=self.reply, trigger='date',
-                                          run_date=datetime.now(tz=pytz.timezone(settings.TZ)) + timedelta(seconds=3), # 先执行回复
-                                          id="st98sign_reply_once",
-                                          name="98堂立即回复")
+                                              run_date=datetime.now(tz=pytz.timezone(settings.TZ)) + timedelta(
+                                                  seconds=3),  # 先执行回复
+                                              id="st98sign_reply_once",
+                                              name="98堂立即回复")
                 if self._scheduler_reply.get_jobs():
                     self._scheduler_reply.start()
                 # 重置标志并更新配置
@@ -226,19 +229,19 @@ class st98sign(_PluginBase):
             return {"http": self._proxy, "https": self._proxy}
         # 支持 socks5 代理 (需要安装 requests[socks])
         elif self._proxy.startswith("socks5://"):
-             try:
-                 import socks # noqa F401
-                 return {"http": self._proxy, "https": self._proxy}
-             except ImportError:
-                 logger.error("检测到 SOCKS5 代理，但缺少必要的依赖。请运行 pip install requests[socks]")
-                 return None
+            try:
+                import socks  # noqa F401
+                return {"http": self._proxy, "https": self._proxy}
+            except ImportError:
+                logger.error("检测到 SOCKS5 代理，但缺少必要的依赖。请运行 pip install requests[socks]")
+                return None
         else:
             logger.warning(f"不支持的代理格式: {self._proxy}，请使用 http://, https:// 或 socks5:// 前缀")
             return None
 
     def _request_session(self, session: requests.Session, method: str, url: str, **kwargs) -> requests.Response:
         """ 使用传入的 requests.Session 发起请求 """
-        full_url = url # 假设传入的已经是完整URL或者相对路径处理在外部完成
+        full_url = url  # 假设传入的已经是完整URL或者相对路径处理在外部完成
         logger.debug(f"_request_session: 请求 {method.upper()} {full_url}")
 
         # 移除 requests 不直接支持的 httpx 参数 (如果从旧代码迁移过来)
@@ -256,7 +259,7 @@ class st98sign(_PluginBase):
         try:
             response = session.request(method, full_url, **kwargs)
             logger.debug(f"_request_session: 响应状态码 {response.status_code} for {full_url}")
-            response.raise_for_status() # 对 >= 400 的状态码抛出异常
+            response.raise_for_status()  # 对 >= 400 的状态码抛出异常
             return response
         except requests.exceptions.Timeout as timeout_err:
             logger.error(f"_request_session: 请求超时: {method.upper()} {full_url} - {timeout_err}", exc_info=True)
@@ -266,10 +269,12 @@ class st98sign(_PluginBase):
             logger.error(f"_request_session: HTTP 错误: {method.upper()} {full_url} - {http_err}", exc_info=True)
             # 可以选择记录响应体的前一部分用于调试
             if http_err.response is not None:
-                 logger.error(f"_request_session: HTTP 错误响应内容 (前100字符): {http_err.response.text[:100]}")
+                logger.error(f"_request_session: HTTP 错误响应内容 (前100字符): {http_err.response.text[:100]}")
             raise
         except requests.exceptions.RequestException as req_exc:
-            logger.error(f"_request_session: 请求失败 ({type(req_exc).__name__}): {method.upper()} {full_url} - {req_exc}", exc_info=True)
+            logger.error(
+                f"_request_session: 请求失败 ({type(req_exc).__name__}): {method.upper()} {full_url} - {req_exc}",
+                exc_info=True)
             raise
         except Exception as e:
             logger.error(f"_request_session: 处理请求时发生意外错误: {method.upper()} {full_url} - {e}", exc_info=True)
@@ -289,7 +294,7 @@ class st98sign(_PluginBase):
             session.cookies.update(cookies)
             logger.debug(f"_perform_operation: Session Cookie 已设置: {session.cookies.get_dict()}")
         else:
-             logger.warning("_perform_operation: 未能解析或未配置Cookie")
+            logger.warning("_perform_operation: 未能解析或未配置Cookie")
 
         # 2. 设置代理
         proxies = self._get_proxies()
@@ -318,11 +323,11 @@ class st98sign(_PluginBase):
                             # requests 需要手动设置 cookie 及其 domain
                             session.cookies.set(name='_safe', value=safeid, domain=self._host)
                             age_confirmed = True
-                            break # 成功后退出循环
-                        elif "forum.php" in r_age.text: # 假设看到论坛链接说明已通过
+                            break  # 成功后退出循环
+                        elif "forum.php" in r_age.text:  # 假设看到论坛链接说明已通过
                             logger.debug("_perform_operation: 页面包含论坛链接，认为已通过年龄确认")
                             age_confirmed = True
-                            break # 成功后退出循环
+                            break  # 成功后退出循环
                         else:
                             logger.warning("_perform_operation: 年龄确认尝试失败，未找到 safeid 或论坛链接")
 
@@ -335,15 +340,15 @@ class st98sign(_PluginBase):
 
                     age_retry_cnt -= 1
                     if age_retry_cnt > 0:
-                         logger.debug(f"_perform_operation: 年龄确认重试，剩余 {age_retry_cnt} 次")
-                         time.sleep(1)
+                        logger.debug(f"_perform_operation: 年龄确认重试，剩余 {age_retry_cnt} 次")
+                        time.sleep(1)
 
                 if not age_confirmed:
                     logger.error('_perform_operation: 多次尝试后未能通过年龄确认')
                     # 根据策略，可以选择在这里抛出异常或继续执行
                     # raise Exception("未能通过年龄确认")
                 else:
-                     logger.info("_perform_operation: 年龄确认成功或已确认")
+                    logger.info("_perform_operation: 年龄确认成功或已确认")
             else:
                 logger.debug("_perform_operation: Cookie 中已存在 _safe，跳过年龄确认")
 
@@ -358,8 +363,8 @@ class st98sign(_PluginBase):
             logger.debug(f"_perform_operation: 操作函数 {operation_func.__name__} 执行完毕")
             return result
         except Exception as op_e:
-             logger.error(f"_perform_operation: 执行操作 {operation_func.__name__} 时出错: {op_e}", exc_info=True)
-             raise # 将操作中的异常向上抛出
+            logger.error(f"_perform_operation: 执行操作 {operation_func.__name__} 时出错: {op_e}", exc_info=True)
+            raise  # 将操作中的异常向上抛出
 
     def _preprocess_xml_text(self, text) -> str:
         """ 处理 Discuz 返回的 XML CDATA 中的 HTML """
@@ -374,7 +379,7 @@ class st98sign(_PluginBase):
 
         if '回复发布成功' in text:
             return '回复发布成功'
-            
+
         # 如果没有特定匹配，进行一般处理
         if '<![CDATA[' not in text:
             # 清理可能的 XML 标签
@@ -387,25 +392,25 @@ class st98sign(_PluginBase):
             root = ET.fromstring(text)
             cdata = root.text
             if not cdata: return text
-            soup = BeautifulSoup(cdata, 'lxml') # 使用 lxml 解析器
+            soup = BeautifulSoup(cdata, 'lxml')  # 使用 lxml 解析器
             # 移除脚本和样式
             for script in soup.find_all(['script', 'style']):
                 script.decompose()
             # 获取纯文本，并进一步清理
             text_content = soup.get_text(separator=' ', strip=True)
-            
+
             # 针对常见的成功消息模式进行特殊处理
             if '签到成功' in text_content:
                 success_match = re.search(r'签到成功[^\'\"]*', text_content)
                 if success_match:
                     return success_match.group(0)
-                
+
             if '回复发布成功' in text_content:
                 return '回复发布成功'
-            
+
             # 删除多余空格
             cleaned = re.sub(r'\s+', ' ', text_content).strip()
-            return cleaned or "操作已完成" # 返回处理后的文本或简单确认
+            return cleaned or "操作已完成"  # 返回处理后的文本或简单确认
         except Exception as e:
             logger.warning(f"处理XML响应时出错: {e} - 原始文本: {text[:100]}...")
             # 尝试提取 CDATA 内容
@@ -420,13 +425,13 @@ class st98sign(_PluginBase):
                     success_match = re.search(r'签到成功[^\'\"]*', content)
                     if success_match:
                         return success_match.group(0)
-                
+
                 if '回复发布成功' in content:
                     return '回复发布成功'
-                
+
                 # 删除多余空格并返回
                 return re.sub(r'\s+', ' ', content).strip() or "操作已完成"
-            
+
             # 清理原始文本并返回
             cleaned = re.sub(r'<[^>]+>', ' ', text)
             cleaned = re.sub(r'\s+', ' ', cleaned).strip()
@@ -461,15 +466,15 @@ class st98sign(_PluginBase):
         self._manual_trigger_sign = False
 
         # --- 执行核心操作 ---
-        sign_dict = { # 初始化历史记录字典
+        sign_dict = {  # 初始化历史记录字典
             "date": datetime.now(tz=pytz.timezone(settings.TZ)).strftime('%Y-%m-%d %H:%M:%S'),
             "status": "未知",
             "message": "",
             "trigger": trigger_type,
             "reward_amount": None,
-            "username": None,      # 添加 username
-            "points_before": None, # 添加签到前积分
-            "money_before": None   # 添加签到前金钱
+            "username": None,  # 添加 username
+            "points_before": None,  # 添加签到前积分
+            "money_before": None  # 添加签到前金钱
         }
 
         try:
@@ -484,44 +489,46 @@ class st98sign(_PluginBase):
                 sign_dict["username"] = user_info_before.get("username")
                 sign_dict["points_before"] = user_info_before.get("points")
                 sign_dict["money_before"] = user_info_before.get("money")
-                logger.info(f"获取到用户信息: 用户名={sign_dict['username']}, 积分={sign_dict['points_before']}, 金钱={sign_dict['money_before']}")
+                logger.info(
+                    f"获取到用户信息: 用户名={sign_dict['username']}, 积分={sign_dict['points_before']}, 金钱={sign_dict['money_before']}")
             else:
                 logger.warning("未能获取到签到前用户信息")
 
             # --- 步骤2: 执行签到操作 ---
             logger.info("开始执行签到操作...")
             sign_result = self._perform_operation(self._sign_internal)
-            sign_dict.update(sign_result) # 将签到结果合并到 sign_dict
+            sign_dict.update(sign_result)  # 将签到结果合并到 sign_dict
 
-        except ValueError as ve: # 配置错误
-             logger.error(f"签到配置错误: {ve}")
-             sign_dict["status"] = "配置错误"
-             sign_dict["message"] = str(ve)
-        except requests.exceptions.RequestException as req_err: # 网络错误
+        except ValueError as ve:  # 配置错误
+            logger.error(f"签到配置错误: {ve}")
+            sign_dict["status"] = "配置错误"
+            sign_dict["message"] = str(ve)
+        except requests.exceptions.RequestException as req_err:  # 网络错误
             logger.error(f"签到请求失败: {req_err}", exc_info=True)
             sign_dict["status"] = "请求失败"
             sign_dict["message"] = f"网络错误: {req_err}"
             if isinstance(req_err, requests.exceptions.HTTPError) and req_err.response is not None:
-                sign_dict["message"] = f"HTTP {req_err.response.status_code}: {self._preprocess_xml_text(req_err.response.text)}"
+                sign_dict[
+                    "message"] = f"HTTP {req_err.response.status_code}: {self._preprocess_xml_text(req_err.response.text)}"
         except Exception as e:
             logger.error(f"签到过程中发生错误: {e}", exc_info=True)
             sign_dict["status"] = "执行出错"
             sign_dict["message"] = str(e)
         finally:
             # 保存包含用户信息和签到结果的完整历史
-            sign_dict['trigger'] = trigger_type # 确保 trigger 总是设置
-            sign_dict['date'] = datetime.now(tz=pytz.timezone(settings.TZ)).strftime('%Y-%m-%d %H:%M:%S') # 确保时间是最终时间
+            sign_dict['trigger'] = trigger_type  # 确保 trigger 总是设置
+            sign_dict['date'] = datetime.now(tz=pytz.timezone(settings.TZ)).strftime('%Y-%m-%d %H:%M:%S')  # 确保时间是最终时间
             self._save_history(history_key, sign_dict)
             if self._notify and sign_dict.get("status") != "跳过":
                 self._send_notification(sign_dict, task_type="签到")
 
             logger.info(f"签到完成 (ST98Sign): 状态={sign_dict['status']}, 消息={sign_dict['message']}")
             if sign_dict["status"] in ["签到成功", "已签到"] and not is_manual:
-                 self._save_last_done_date(history_key)
+                self._save_last_done_date(history_key)
 
     def _sign_internal(self, session: requests.Session, base_url: str, **kwargs) -> dict:
         """ 实际执行签到的内部逻辑，使用传入的 session """
-        result = {"status": "未知", "message": "", "reward_amount": None} # 添加 reward_amount
+        result = {"status": "未知", "message": "", "reward_amount": None}  # 添加 reward_amount
         formhash = None
         signtoken = None
         action_url = None
@@ -540,7 +547,7 @@ class st98sign(_PluginBase):
         # 2. 获取签到表单参数 (通过Ajax接口)，包含重试逻辑
         ajax_url = f'{base_url}/plugin.php?id=dd_sign&ac=sign&infloat=yes&handlekey=pc_click_ddsign&inajax=1&ajaxtarget=fwin_content_pc_click_ddsign'
         max_retries = 3
-        retry_delay_seconds = 15 # 系统繁忙后等待时间
+        retry_delay_seconds = 15  # 系统繁忙后等待时间
         form_params_obtained = False
         last_exception = None
 
@@ -553,11 +560,12 @@ class st98sign(_PluginBase):
 
                 # 检查是否系统繁忙
                 if "系统繁忙" in raw_xml:
-                    logger.warning(f"获取签到表单参数失败 (第 {attempt + 1} 次): 系统繁忙。将在 {retry_delay_seconds} 秒后重试...")
-                    last_exception = Exception("系统繁忙") # 记录最后错误类型
+                    logger.warning(
+                        f"获取签到表单参数失败 (第 {attempt + 1} 次): 系统繁忙。将在 {retry_delay_seconds} 秒后重试...")
+                    last_exception = Exception("系统繁忙")  # 记录最后错误类型
                     if attempt < max_retries - 1:
                         time.sleep(retry_delay_seconds)
-                    continue # 继续下一次重试
+                    continue  # 继续下一次重试
 
                 # 解析响应
                 soup = BeautifulSoup(raw_xml, 'xml')
@@ -566,8 +574,8 @@ class st98sign(_PluginBase):
                     processed_text = self._preprocess_xml_text(raw_xml)
                     # 检查是否已签到（可能是无HTML内容的原因）
                     if '已经签到' in processed_text:
-                         logger.info(f"_sign_internal: 从Ajax响应检测到已签到: {processed_text}")
-                         return {"status": "已签到", "message": processed_text} # 直接返回已签到状态
+                        logger.info(f"_sign_internal: 从Ajax响应检测到已签到: {processed_text}")
+                        return {"status": "已签到", "message": processed_text}  # 直接返回已签到状态
                     # 如果不是已签到，则抛出异常
                     raise Exception(f"无法从Ajax响应中提取HTML内容。响应内容: {processed_text}")
 
@@ -586,10 +594,11 @@ class st98sign(_PluginBase):
                     if not secqaa_span: missing.append("验证码ID (secqaa)")
                     # 如果缺少参数且不是已签到，则抛出异常
                     if '已经签到' not in processed_text:
-                         raise Exception(f"未能从签到表单中提取必要参数: {', '.join(missing)}。响应内容: {processed_text}")
-                    else: # 如果缺少参数但提示已签到
-                         logger.info(f"_sign_internal: 提取参数时发现已签到提示: {processed_text}")
-                         return {"status": "已签到", "message": processed_text}
+                        raise Exception(
+                            f"未能从签到表单中提取必要参数: {', '.join(missing)}。响应内容: {processed_text}")
+                    else:  # 如果缺少参数但提示已签到
+                        logger.info(f"_sign_internal: 提取参数时发现已签到提示: {processed_text}")
+                        return {"status": "已签到", "message": processed_text}
 
                 formhash = formhash_input['value']
                 signtoken = signtoken_input['value']
@@ -597,27 +606,28 @@ class st98sign(_PluginBase):
                 action_path = action_form['action'].lstrip('/')
                 action_url = f"{base_url}/{action_path}"
                 id_hash = secqaa_span['id'].removeprefix('secqaa_')
-                logger.info(f"_sign_internal: 获取签到表单参数成功: formhash={formhash}, signtoken={signtoken}, id_hash={id_hash}, action={action_url}")
+                logger.info(
+                    f"_sign_internal: 获取签到表单参数成功: formhash={formhash}, signtoken={signtoken}, id_hash={id_hash}, action={action_url}")
                 form_params_obtained = True
-                break # 成功获取，跳出重试循环
+                break  # 成功获取，跳出重试循环
 
             except requests.exceptions.RequestException as e:
                 logger.warning(f"获取签到表单参数请求失败 (第 {attempt + 1} 次): {e}")
                 last_exception = e
                 if attempt < max_retries - 1:
-                    time.sleep(5) # 网络请求失败，短暂等待后重试
+                    time.sleep(5)  # 网络请求失败，短暂等待后重试
             except Exception as e:
                 logger.error(f"处理签到表单响应时出错 (第 {attempt + 1} 次): {e}", exc_info=True)
                 last_exception = e
                 # 解析错误通常不建议重试，直接跳出
-                break # 退出循环
+                break  # 退出循环
 
         # 如果重试完成后仍未成功获取参数
         if not form_params_obtained:
             error_msg = f"多次尝试后未能获取签到表单参数。"
             if last_exception:
-                 error_msg += f" 最后错误: {last_exception}"
-            raise Exception(error_msg) # 抛出异常，由外层处理
+                error_msg += f" 最后错误: {last_exception}"
+            raise Exception(error_msg)  # 抛出异常，由外层处理
 
         # 3. 获取验证问题
         qaa_url = f'{base_url}/misc.php?mod=secqaa&action=update&idhash={id_hash}&{round(random.random(), 16)}'
@@ -630,9 +640,9 @@ class st98sign(_PluginBase):
             try:
                 ans = eval(qes, {"__builtins__": {}}, {})
                 if not isinstance(ans, int):
-                     raise ValueError("计算结果不是整数")
+                    raise ValueError("计算结果不是整数")
             except Exception as eval_e:
-                 raise Exception(f'计算验证问题 "{qes}" 时出错: {eval_e}')
+                raise Exception(f'计算验证问题 "{qes}" 时出错: {eval_e}')
             logger.info(f'_sign_internal: 获取并计算验证问题成功: {qes} = {ans}')
         except requests.exceptions.RequestException as e:
             raise Exception(f"_sign_internal: 获取验证问题失败: {e}")
@@ -640,7 +650,7 @@ class st98sign(_PluginBase):
             raise Exception(f"_sign_internal: 处理验证问题失败: {e}")
 
         # 4. 提交签到
-        submit_url = f'{action_url}&inajax=1' # action_url 已经是完整的了
+        submit_url = f'{action_url}&inajax=1'  # action_url 已经是完整的了
         submit_data = {
             'formhash': formhash,
             'signtoken': signtoken,
@@ -648,7 +658,8 @@ class st98sign(_PluginBase):
             'secanswer': ans
         }
         try:
-            r = self._request_session(session, 'post', submit_url, data=submit_data, headers={'Referer': sign_plugin_url})
+            r = self._request_session(session, 'post', submit_url, data=submit_data,
+                                      headers={'Referer': sign_plugin_url})
             response_text = r.text
             logger.debug(f"_sign_internal: 签到提交响应: {response_text[:200]}...")
             processed_text = self._preprocess_xml_text(response_text)
@@ -670,7 +681,8 @@ class st98sign(_PluginBase):
 
             elif '已签到' in processed_text:
                 result["status"] = "已签到"
-                result["message"] = re.search(r"(已经签到.+)", processed_text).group(1).strip() if re.search(r"(已经签到.+)", processed_text) else processed_text
+                result["message"] = re.search(r"(已经签到.+)", processed_text).group(1).strip() if re.search(
+                    r"(已经签到.+)", processed_text) else processed_text
             elif '需要先登录' in processed_text:
                 result["status"] = "失败"
                 result["message"] = "Cookie无效或已过期"
@@ -680,7 +692,8 @@ class st98sign(_PluginBase):
         except requests.exceptions.RequestException as e:
             if isinstance(e, requests.exceptions.HTTPError) and e.response is not None:
                 response_text_processed = self._preprocess_xml_text(e.response.text)
-                error_msg = "_sign_internal: 提交签到失败: HTTP {} - {}".format(e.response.status_code, response_text_processed)
+                error_msg = "_sign_internal: 提交签到失败: HTTP {} - {}".format(e.response.status_code,
+                                                                                response_text_processed)
                 raise Exception(error_msg)
             else:
                 raise Exception("提交签到网络请求失败: {}".format(e))
@@ -704,23 +717,23 @@ class st98sign(_PluginBase):
 
         # 检查基础配置 (Cookie, Host, 回复内容)
         if not self._cookie or not self._host:
-             logger.error("回复失败：Cookie 或 站点Host 未配置。")
-             # 可以在这里记录错误历史并返回，或者让 perform_operation 处理
-             # 为简单起见，让 perform_operation 处理
-             pass # 继续执行，让 _perform_operation 抛出或记录错误
+            logger.error("回复失败：Cookie 或 站点Host 未配置。")
+            # 可以在这里记录错误历史并返回，或者让 perform_operation 处理
+            # 为简单起见，让 perform_operation 处理
+            pass  # 继续执行，让 _perform_operation 抛出或记录错误
         if not self._auto_replies:
-             logger.error("回复失败：未配置回复内容。")
-             # 同上，让 perform_operation 处理
-             pass
+            logger.error("回复失败：未配置回复内容。")
+            # 同上，让 perform_operation 处理
+            pass
 
         # --- 添加随机延迟 (仅针对定时任务) ---
         is_manual = self._manual_trigger_reply
         trigger_type = "手动触发" if is_manual else "定时触发"
         if not is_manual:
-            delay = random.uniform(5, 300) # 5到300秒随机延迟
+            delay = random.uniform(5, 300)  # 5到300秒随机延迟
             logger.info(f"定时任务触发 (回复)，随机延迟 {delay:.2f} 秒后执行...")
             time.sleep(delay)
-            
+
         # 检查今天是否已执行（仅针对非手动触发） - 这个检查放在循环外，只判断是否需要启动这一轮回复
         if not is_manual and self._is_already_done_today(history_key):
             logger.info("根据历史记录，今日已回复过，跳过本次执行")
@@ -728,7 +741,7 @@ class st98sign(_PluginBase):
 
         # 重置手动触发标志 (在循环开始前重置)
         self._manual_trigger_reply = False
-        
+
         # --- 循环执行核心操作 ---
         reply_count = self._reply_times if self._reply_times > 0 else 1
         logger.info(f"计划执行 {reply_count} 次回复 ({trigger_type})。")
@@ -736,8 +749,8 @@ class st98sign(_PluginBase):
         for i in range(reply_count):
             attempt_num = i + 1
             logger.info(f"--- 开始第 {attempt_num}/{reply_count} 次回复尝试 ({trigger_type}) ---")
-            operation_result = {} # 单次操作结果
-            reply_dict = { # 单次操作用于历史/通知的数据
+            operation_result = {}  # 单次操作结果
+            reply_dict = {  # 单次操作用于历史/通知的数据
                 "date": datetime.now(tz=pytz.timezone(settings.TZ)).strftime('%Y-%m-%d %H:%M:%S'),
                 "status": "未知",
                 "message": "",
@@ -756,49 +769,53 @@ class st98sign(_PluginBase):
                 )
                 reply_dict.update(operation_result)
 
-            except ValueError as ve: # 配置错误 (理论上 perform_operation 会处理，但也可能在这里捕获)
-                 logger.error(f"第 {attempt_num} 次回复配置错误: {ve}")
-                 reply_dict["status"] = "配置错误"
-                 reply_dict["message"] = str(ve)
-            except requests.exceptions.RequestException as req_err: # 网络错误
+            except ValueError as ve:  # 配置错误 (理论上 perform_operation 会处理，但也可能在这里捕获)
+                logger.error(f"第 {attempt_num} 次回复配置错误: {ve}")
+                reply_dict["status"] = "配置错误"
+                reply_dict["message"] = str(ve)
+            except requests.exceptions.RequestException as req_err:  # 网络错误
                 logger.error(f"第 {attempt_num} 次回复请求失败: {req_err}", exc_info=True)
                 reply_dict["status"] = "请求失败"
                 reply_dict["message"] = f"网络错误: {req_err}"
                 if isinstance(req_err, requests.exceptions.HTTPError) and req_err.response is not None:
-                    reply_dict["message"] = f"HTTP {req_err.response.status_code}: {self._preprocess_xml_text(req_err.response.text)}"
+                    reply_dict[
+                        "message"] = f"HTTP {req_err.response.status_code}: {self._preprocess_xml_text(req_err.response.text)}"
             except Exception as e:
                 logger.error(f"第 {attempt_num} 次回复过程中发生错误: {e}", exc_info=True)
                 reply_dict["status"] = "执行出错"
                 reply_dict["message"] = str(e)
             finally:
                 # 保存本次尝试的历史记录
-                reply_dict['trigger'] = trigger_type # 确保 trigger 总是设置
-                reply_dict['date'] = datetime.now(tz=pytz.timezone(settings.TZ)).strftime('%Y-%m-%d %H:%M:%S') # 确保时间是最终时间
+                reply_dict['trigger'] = trigger_type  # 确保 trigger 总是设置
+                reply_dict['date'] = datetime.now(tz=pytz.timezone(settings.TZ)).strftime(
+                    '%Y-%m-%d %H:%M:%S')  # 确保时间是最终时间
                 self._save_history(history_key, reply_dict)
                 # 发送本次尝试的通知
                 if self._notify and reply_dict.get("status") != "跳过":
                     self._send_notification(reply_dict, task_type="回复")
-                    
-                logger.info(f"--- 第 {attempt_num}/{reply_count} 次回复尝试完成。状态: {reply_dict['status']}, 消息: {reply_dict['message']}")
+
+                logger.info(
+                    f"--- 第 {attempt_num}/{reply_count} 次回复尝试完成。状态: {reply_dict['status']}, 消息: {reply_dict['message']}")
                 # 记录成功的日期 (只要有一次成功就算完成当天任务，防止 _is_already_done_today 误判)
                 if reply_dict["status"] == "回复成功" and not is_manual:
                     self._save_last_done_date(history_key)
 
             # 回复之间的间隔 (如果不是最后一次)
             if i < reply_count - 1:
-                interval = random.uniform(15, 35) # 15到35秒间隔
+                interval = random.uniform(15, 35)  # 15到35秒间隔
                 logger.info(f"等待 {interval:.2f} 秒后进行下一次回复...")
                 time.sleep(interval)
 
         logger.info("============= ST98 回复任务结束 ==============")
 
-    def _reply_internal(self, session: requests.Session, base_url: str, reply_fid: int, auto_replies: list, **kwargs) -> dict:
+    def _reply_internal(self, session: requests.Session, base_url: str, reply_fid: int, auto_replies: list,
+                        **kwargs) -> dict:
         """ 实际执行单次回复的内部逻辑，包含历史检查和过滤 """
         result = {"status": "未知", "message": "", "tid": None, "reply_content": ""}
         tid_to_reply = None
         formhash = None
 
-        # --- 1. 加载并过滤历史记录 --- 
+        # --- 1. 加载并过滤历史记录 ---
         history_key = f"{self.plugin_config_prefix}回复_history"
         recent_history = self.get_data(history_key) or []
         cutoff_date = datetime.now(pytz.timezone(settings.TZ)) - timedelta(days=self._history_days)
@@ -808,46 +825,67 @@ class st98sign(_PluginBase):
                 record_time_naive = datetime.strptime(record["date"], '%Y-%m-%d %H:%M:%S')
                 record_time = pytz.timezone(settings.TZ).localize(record_time_naive)
                 # 只考虑指定天数内已处理过的帖子的TID
-                if record_time >= cutoff_date and record.get('status') in ['回复成功', '等待审核', '回复过快', '部分成功']: # 部分成功的记录也排除
+                if record_time >= cutoff_date and record.get('status') in ['回复成功', '等待审核', '回复过快',
+                                                                           '部分成功']:  # 部分成功的记录也排除
                     tid_in_record = record.get('tid')
                     if tid_in_record:
                         replied_tids_history.add(str(tid_in_record))
             except (ValueError, KeyError, TypeError):
-                pass # 忽略格式错误的记录
+                pass  # 忽略格式错误的记录
         logger.info(f"从历史记录加载了 {len(replied_tids_history)} 个最近已处理的 TID 用于过滤。")
 
-        # --- 2. 获取板块页面并选择未回复的帖子 --- 
+        # --- 2. 获取板块页面并选择未回复的帖子 ---
         forum_url = f"{base_url}/forum.php?mod=forumdisplay&fid={reply_fid}"
         try:
             logger.info(f"_reply_internal: 正在访问板块页面: fid={reply_fid}")
             r = self._request_session(session, 'get', forum_url, headers={'Referer': f"{base_url}/forum.php"})
-            all_tids_on_page = re.findall(r"normalthread_(\d+)", r.text, re.MULTILINE | re.IGNORECASE)
+            all_tids_on_page = list(set(re.findall(r"normalthread_(\d+)", r.text, re.MULTILINE | re.IGNORECASE)))
             if not all_tids_on_page:
                 logger.warning(f"在板块 fid={reply_fid} 未找到任何帖子ID")
                 result["status"] = "跳过"
                 result["message"] = f"板块 {reply_fid} 无帖子"
                 return result
-               
+
+            # 过滤掉版务管理帖子
+            filtered_tids = []
+            soup = BeautifulSoup(r.text, 'lxml')
+            for tid in all_tids_on_page:
+                # 查找包含该tid的帖子行 - 根据HTML结构，需要查找tbody
+                thread_tbody = soup.find('tbody', {'id': f'normalthread_{tid}'})
+                if thread_tbody:
+                    # 在tbody内查找th标签，检查是否包含版务管理标识
+                    th_element = thread_tbody.find('th')
+                    if th_element and th_element.find('em') and '版务管理' in th_element.get_text():
+                        logger.debug(f"_reply_internal: 跳过版务管理帖子 tid={tid}")
+                        continue
+                filtered_tids.append(tid)
+
+            if not filtered_tids:
+                logger.warning(f"在板块 fid={reply_fid} 过滤版务管理帖子后无可用帖子")
+                result["status"] = "跳过"
+                result["message"] = f"板块 {reply_fid} 无非版务管理帖子"
+                return result
+
             # 过滤掉已回复的
-            available_tids = [tid for tid in all_tids_on_page if tid not in replied_tids_history]
-           
+            available_tids = [tid for tid in filtered_tids if tid not in replied_tids_history]
+
             if not available_tids:
-                logger.info(f"板块 fid={reply_fid} 上的所有帖子最近都已回复过。")
+                logger.info(f"板块 fid={reply_fid} 上的所有非版务管理帖子最近都已回复过。")
                 result["status"] = "跳过"
                 result["message"] = "无新帖可回复"
                 return result
-               
+
             # 从可用帖子中随机选择一个
             tid_to_reply = random.choice(available_tids)
             result["tid"] = tid_to_reply
-            logger.info(f"_reply_internal: 随机选择未回复帖子 tid = {tid_to_reply} 进行回复")
+            logger.info(f"_reply_internal: 随机选择未回复的非版务管理帖子 tid = {tid_to_reply} 进行回复")
 
         except requests.exceptions.RequestException as e:
             raise Exception(f"_reply_internal: 访问板块页面失败: {e}")
         except Exception as e:
             raise Exception(f"_reply_internal: 处理板块页面响应失败: {e}")
 
-        # --- 3. 访问帖子页面获取 formhash --- 
+        # --- 3. 访问帖子页面获取 formhash ---
         thread_url = f"{base_url}/forum.php?mod=viewthread&tid={tid_to_reply}"
         logger.info(f"_reply_internal: 正在访问帖子页面: tid={tid_to_reply}")
         try:
@@ -855,34 +893,34 @@ class st98sign(_PluginBase):
             soup = BeautifulSoup(r.text, 'lxml')
             formhash_input = soup.find('input', {'name': 'formhash'})
             if not formhash_input or not formhash_input.get('value'):
-                 # 尝试从其他地方查找 formhash, 比如 reply 按钮的 onclick 事件
-                 onclick_scripts = soup.find_all(string=re.compile(r"fastpostvalidate\(.*'formhash':\s*'(\w+)'\\)"))
-                 if onclick_scripts:
-                     match = re.search(r"'formhash':\s*'(\w+)'", onclick_scripts[0])
-                     if match:
-                          formhash = match.group(1)
-                          logger.info(f"_reply_internal: 从脚本中获取 formhash 成功: {formhash}")
-                 if not formhash:
-                     logger.error(f"_reply_internal: 未能找到 formhash input: {formhash_input}")
-                     logger.error(f"_reply_internal: 未能从脚本找到 formhash, 页面内容 (前500字符): {r.text[:500]}")
-                     raise Exception('在帖子 tid={} 未找到formhash'.format(tid_to_reply))
+                # 尝试从其他地方查找 formhash, 比如 reply 按钮的 onclick 事件
+                onclick_scripts = soup.find_all(string=re.compile(r"fastpostvalidate\(.*'formhash':\s*'(\w+)'\\)"))
+                if onclick_scripts:
+                    match = re.search(r"'formhash':\s*'(\w+)'", onclick_scripts[0])
+                    if match:
+                        formhash = match.group(1)
+                        logger.info(f"_reply_internal: 从脚本中获取 formhash 成功: {formhash}")
+                if not formhash:
+                    logger.error(f"_reply_internal: 未能找到 formhash input: {formhash_input}")
+                    logger.error(f"_reply_internal: 未能从脚本找到 formhash, 页面内容 (前500字符): {r.text[:500]}")
+                    raise Exception('在帖子 tid={} 未找到formhash'.format(tid_to_reply))
             else:
-                 formhash = formhash_input['value']
-                 logger.info(f"_reply_internal: 从 input 获取 formhash 成功: {formhash}")
+                formhash = formhash_input['value']
+                logger.info(f"_reply_internal: 从 input 获取 formhash 成功: {formhash}")
 
         except requests.exceptions.RequestException as e:
             raise Exception("_reply_internal: 访问帖子页面失败: {}".format(e))
         except Exception as e:
             raise Exception("_reply_internal: 解析帖子页面失败: {}".format(e))
 
-        # --- 4. 准备回复内容 --- 
+        # --- 4. 准备回复内容 ---
         if not auto_replies:
-            raise ValueError("回复内容列表为空") 
+            raise ValueError("回复内容列表为空")
         message = random.choice(auto_replies)
         result["reply_content"] = message
         logger.info(f"_reply_internal: 选择回复内容: {message}")
 
-        # --- 5. 提交回复 --- 
+        # --- 5. 提交回复 ---
         reply_action_url = f"{base_url}/forum.php?mod=post&action=reply&fid={reply_fid}&tid={tid_to_reply}&extra=page%3D1&replysubmit=yes&infloat=yes&handlekey=fastpost&inajax=1"
         reply_data = {
             'message': message,
@@ -893,7 +931,8 @@ class st98sign(_PluginBase):
         }
         logger.info(f"_reply_internal: 正在提交回复到 tid={tid_to_reply}")
         try:
-            r = self._request_session(session, 'post', reply_action_url, data=reply_data, headers={'Referer': thread_url})
+            r = self._request_session(session, 'post', reply_action_url, data=reply_data,
+                                      headers={'Referer': thread_url})
             response_text = r.text
             logger.debug(f"_reply_internal: 回复提交响应: {response_text[:200]}...")
             processed_text = self._preprocess_xml_text(response_text)
@@ -939,7 +978,8 @@ class st98sign(_PluginBase):
             valid_history = []
             for record in history:
                 try:
-                    record_date = datetime.strptime(record["date"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=pytz.timezone(settings.TZ))
+                    record_date = datetime.strptime(record["date"], '%Y-%m-%d %H:%M:%S').replace(
+                        tzinfo=pytz.timezone(settings.TZ))
                     if (now - record_date).days < self._history_days:
                         valid_history.append(record)
                 except (ValueError, KeyError, TypeError):
@@ -965,16 +1005,16 @@ class st98sign(_PluginBase):
         """ 检查今天是否已经成功执行过 (签到或回复) """
         today = datetime.now(tz=pytz.timezone(settings.TZ)).strftime('%Y-%m-%d')
         history = self.get_data(key) or []
-        for record in reversed(history): # 从后往前检查更快
+        for record in reversed(history):  # 从后往前检查更快
             if record.get("date", "").startswith(today):
-                 # 签到成功/已签到 或 回复成功 视为完成
-                 if record.get("status") in ["签到成功", "已签到", "回复成功", "跳过"]: # 跳过也算完成，避免重复执行
-                      logger.info(f"今日 {key} 已完成，最后状态: {record['status']}")
-                      return True
-                 elif record.get("status") in ["失败", "请求失败", "执行出错", "配置错误"]:
-                     # 如果今天最后一次执行失败，则允许重试
-                     logger.info(f"今日 {key} 最后一次执行状态为 {record['status']}，允许重试")
-                     return False
+                # 签到成功/已签到 或 回复成功 视为完成
+                if record.get("status") in ["签到成功", "已签到", "回复成功", "跳过"]:  # 跳过也算完成，避免重复执行
+                    logger.info(f"今日 {key} 已完成，最后状态: {record['status']}")
+                    return True
+                elif record.get("status") in ["失败", "请求失败", "执行出错", "配置错误"]:
+                    # 如果今天最后一次执行失败，则允许重试
+                    logger.info(f"今日 {key} 最后一次执行状态为 {record['status']}，允许重试")
+                    return False
         # 如果今天没有记录，则认为未完成
         logger.info(f"今日无 {key} 执行记录")
         return False
@@ -994,9 +1034,9 @@ class st98sign(_PluginBase):
         raw_message = result_dict.get("message", "")
         reward_amount = result_dict.get("reward_amount")
         if not reward_amount and status == "签到成功":
-             reward_match = re.search(r'(?:获得|奖励)\s*(\d+)\s*金钱', raw_message)
-             if reward_match:
-                 reward_amount = reward_match.group(1)
+            reward_match = re.search(r'(?:获得|奖励)\s*(\d+)\s*金钱', raw_message)
+            if reward_match:
+                reward_amount = reward_match.group(1)
 
         # 用户信息
         username = result_dict.get("username")
@@ -1020,15 +1060,15 @@ class st98sign(_PluginBase):
         tid = result_dict.get("tid")
 
         title_prefix = "✅" if status in ["签到成功", "已签到", "回复成功"] else \
-                       "❌" if status in ["失败", "请求失败", "执行出错", "配置错误"] else \
-                       "ℹ️" if status == "跳过" else "⚠️"
+            "❌" if status in ["失败", "请求失败", "执行出错", "配置错误"] else \
+                "ℹ️" if status == "跳过" else "⚠️"
 
         title = f"【{title_prefix} ST98 {task_type} {status}】"
 
         text = f"📢 执行结果\n━━━━━━━━━━\n"
         if task_type == "签到":
             text += f"👤 用户：{username if username else '-'}\n"
-            text += f"💰 金钱：{money_before if money_before is not None else '-'} (+{reward_amount if reward_amount is not None else '0'})\n" # 显示签到前和奖励
+            text += f"💰 金钱：{money_before if money_before is not None else '-'} (+{reward_amount if reward_amount is not None else '0'})\n"  # 显示签到前和奖励
             text += f"💎 积分：{points_before if points_before is not None else '-'}\n"
 
         text += (
@@ -1039,7 +1079,7 @@ class st98sign(_PluginBase):
         )
 
         if task_type == "回复" and tid:
-             text += f"🔗 帖子 TID：{tid}\n"
+            text += f"🔗 帖子 TID：{tid}\n"
 
         text += f"━━━━━━━━━━"
 
@@ -1146,18 +1186,36 @@ class st98sign(_PluginBase):
                             {'component': 'VCardText', 'content': [
                                 # 开关行 (启用, 通知)
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'enabled', 'label': '启用插件'}}]},
-                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'notify', 'label': '开启通知'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [
+                                        {'component': 'VSwitch', 'props': {'model': 'enabled', 'label': '启用插件'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [
+                                        {'component': 'VSwitch', 'props': {'model': 'notify', 'label': '开启通知'}}]},
                                 ]},
                                 # Cookie 行
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextField', 'props': {'model': 'cookie', 'label': '站点Cookie', 'placeholder': '在此粘贴', 'hint': '有效期有限，需定期更新'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextField',
+                                                                                              'props': {
+                                                                                                  'model': 'cookie',
+                                                                                                  'label': '站点Cookie',
+                                                                                                  'placeholder': '在此粘贴',
+                                                                                                  'hint': '有效期有限，需定期更新'}}]},
                                 ]},
                                 # Host, Proxy, History Days 行
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 4}, 'content': [{'component': 'VTextField', 'props': {'model': 'host', 'label': '站点Host', 'placeholder': 't66y.com', 'hint': '站点域名 (不需要https://)'}}]},
-                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 4}, 'content': [{'component': 'VTextField', 'props': {'model': 'proxy', 'label': '代理服务器 (可选)', 'placeholder': 'http://127.0.0.1:7890', 'hint': '支持 http/https/socks5'}}]},
-                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 4}, 'content': [{'component': 'VTextField', 'props': {'model': 'history_days', 'label': '历史过滤天数', 'type': 'number', 'placeholder': '30', 'hint': '页面显示和回复过滤的历史天数'}}]}, # Hint 已存在
+                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 4}, 'content': [
+                                        {'component': 'VTextField',
+                                         'props': {'model': 'host', 'label': '站点Host', 'placeholder': 't66y.com',
+                                                   'hint': '站点域名 (不需要https://)'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 4}, 'content': [
+                                        {'component': 'VTextField',
+                                         'props': {'model': 'proxy', 'label': '代理服务器 (可选)',
+                                                   'placeholder': 'http://127.0.0.1:7890',
+                                                   'hint': '支持 http/https/socks5'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 4}, 'content': [
+                                        {'component': 'VTextField',
+                                         'props': {'model': 'history_days', 'label': '历史过滤天数', 'type': 'number',
+                                                   'placeholder': '30', 'hint': '页面显示和回复过滤的历史天数'}}]},
+                                    # Hint 已存在
                                 ]}
                             ]}
                         ]
@@ -1170,8 +1228,13 @@ class st98sign(_PluginBase):
                             {'component': 'VCardTitle', 'props': {'class': 'text-h6'}, 'text': '📊 签到设置'},
                             {'component': 'VCardText', 'content': [
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'sign_onlyonce', 'label': '立即签到一次'}}]},
-                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [{'component': 'VCronField', 'props': {'model': 'sign_cron', 'label': '签到周期 Cron', 'hint': '留空则禁用。预设值: 0 8 * * *'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [
+                                        {'component': 'VSwitch',
+                                         'props': {'model': 'sign_onlyonce', 'label': '立即签到一次'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [
+                                        {'component': 'VCronField',
+                                         'props': {'model': 'sign_cron', 'label': '签到周期 Cron',
+                                                   'hint': '留空则禁用。预设值: 0 8 * * *'}}]},
                                 ]}
                             ]}
                         ]
@@ -1185,17 +1248,34 @@ class st98sign(_PluginBase):
                             {'component': 'VCardText', 'content': [
                                 # 立即回复和 Cron 行
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'reply_onlyonce', 'label': '立即回复一次'}}]},
-                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [{'component': 'VCronField', 'props': {'model': 'reply_cron', 'label': '回复周期 Cron', 'hint': '留空则禁用。预设值: 0 10,18 * * *'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [
+                                        {'component': 'VSwitch',
+                                         'props': {'model': 'reply_onlyonce', 'label': '立即回复一次'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'sm': 6}, 'content': [
+                                        {'component': 'VCronField',
+                                         'props': {'model': 'reply_cron', 'label': '回复周期 Cron',
+                                                   'hint': '留空则禁用。预设值: 0 10,18 * * *'}}]},
                                 ]},
                                 # FID 和 次数 行
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VTextField', 'props': {'model': 'reply_fid', 'label': '回复板块FID', 'type': 'number', 'placeholder': '103', 'hint': '目标板块数字ID，可在论坛URL中查看'}}]},
-                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VTextField', 'props': {'model': 'reply_times', 'label': '每次回复数量', 'type': 'number', 'placeholder': '1', 'hint': '每次任务尝试回复多少个帖子'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [
+                                        {'component': 'VTextField',
+                                         'props': {'model': 'reply_fid', 'label': '回复板块FID', 'type': 'number',
+                                                   'placeholder': '103', 'hint': '目标板块数字ID，可在论坛URL中查看'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [
+                                        {'component': 'VTextField',
+                                         'props': {'model': 'reply_times', 'label': '每次回复数量', 'type': 'number',
+                                                   'placeholder': '1', 'hint': '每次任务尝试回复多少个帖子'}}]},
                                 ]},
                                 # 回复内容 行
                                 {'component': 'VRow', 'content': [
-                                    {'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextarea', 'props': {'model': 'auto_replies', 'label': '自动回复内容 (每行一条)', 'placeholder': '留空则使用默认回复', 'rows': 6, 'hint': '系统会随机选择其中一条作为回复'}}]},
+                                    {'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextarea',
+                                                                                              'props': {
+                                                                                                  'model': 'auto_replies',
+                                                                                                  'label': '自动回复内容 (每行一条)',
+                                                                                                  'placeholder': '留空则使用默认回复',
+                                                                                                  'rows': 6,
+                                                                                                  'hint': '系统会随机选择其中一条作为回复'}}]},
                                 ]}
                             ]}
                         ]
@@ -1207,7 +1287,8 @@ class st98sign(_PluginBase):
             "enabled": False, "notify": True,
             "cookie": "", "host": "", "proxy": "", "history_days": 30,
             "sign_onlyonce": False, "sign_cron": "0 8 * * *",
-            "reply_onlyonce": False, "reply_cron": "0 10,18 * * *", "reply_fid": 103, "reply_times": 1, "auto_replies": default_replies_text,
+            "reply_onlyonce": False, "reply_cron": "0 10,18 * * *", "reply_fid": 103, "reply_times": 1,
+            "auto_replies": default_replies_text,
         }
         logger.debug("完成执行 get_form (st98sign)")
         return form_config, default_values
@@ -1225,16 +1306,16 @@ class st98sign(_PluginBase):
         sign_history = sorted(sign_history_raw, key=lambda x: x.get("date", ""), reverse=True)
         reply_history = sorted(reply_history_raw, key=lambda x: x.get("date", ""), reverse=True)
 
-        page_components = [] # 初始化页面组件列表
+        page_components = []  # 初始化页面组件列表
 
-        # --- 1. 构建汇总卡片 --- 
+        # --- 1. 构建汇总卡片 ---
         latest_sign_record = sign_history[0] if sign_history else {}
         username = latest_sign_record.get('username', '未知')
         money_before = latest_sign_record.get('money_before', '未知')
         points_before = latest_sign_record.get('points_before', '未知')
 
         last_success_sign_time = '从未成功'
-        for record in sign_history: # 已经倒序，直接遍历
+        for record in sign_history:  # 已经倒序，直接遍历
             if record.get('status') in ['签到成功', '已签到']:
                 last_success_sign_time = record.get('date', '未知')
                 break
@@ -1243,7 +1324,7 @@ class st98sign(_PluginBase):
         today_sign_status = '未执行'
         today_sign_msg = ''
         today_sign_status_color = 'grey'
-        for record in sign_history: # 已经倒序，直接遍历查找当天的第一条记录
+        for record in sign_history:  # 已经倒序，直接遍历查找当天的第一条记录
             if record.get('date', '').startswith(today_str):
                 today_sign_status = record.get('status', '未知')
                 today_sign_msg = record.get('message', '')
@@ -1252,7 +1333,7 @@ class st98sign(_PluginBase):
                 elif today_sign_status in ['失败', '请求失败', '执行出错', '配置错误']:
                     today_sign_status_color = 'error'
                 else:
-                    today_sign_status_color = 'warning' # 其他状态如等待审核
+                    today_sign_status_color = 'warning'  # 其他状态如等待审核
                 break
 
         summary_card = {
@@ -1266,7 +1347,8 @@ class st98sign(_PluginBase):
                         {'component': 'VCol', 'props': {'cols': 12, 'sm': 6, 'md': 3}, 'content': [
                             {'component': 'div', 'props': {'class': 'd-flex align-center'},
                              'content': [
-                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-account', 'color': 'primary'}},
+                                 {'component': 'VIcon',
+                                  'props': {'start': True, 'icon': 'mdi-account', 'color': 'primary'}},
                                  {'component': 'span', 'text': f"用户: {username}"}
                              ]}
                         ]},
@@ -1274,7 +1356,8 @@ class st98sign(_PluginBase):
                         {'component': 'VCol', 'props': {'cols': 12, 'sm': 6, 'md': 3}, 'content': [
                             {'component': 'div', 'props': {'class': 'd-flex align-center'},
                              'content': [
-                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-cash', 'color': 'orange'}},
+                                 {'component': 'VIcon',
+                                  'props': {'start': True, 'icon': 'mdi-cash', 'color': 'orange'}},
                                  {'component': 'span', 'text': f"金钱(上次获取): {money_before}"}
                              ]}
                         ]},
@@ -1282,7 +1365,8 @@ class st98sign(_PluginBase):
                         {'component': 'VCol', 'props': {'cols': 12, 'sm': 6, 'md': 3}, 'content': [
                             {'component': 'div', 'props': {'class': 'd-flex align-center'},
                              'content': [
-                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-star-four-points', 'color': 'purple'}},
+                                 {'component': 'VIcon',
+                                  'props': {'start': True, 'icon': 'mdi-star-four-points', 'color': 'purple'}},
                                  {'component': 'span', 'text': f"积分(上次获取): {points_before}"}
                              ]}
                         ]},
@@ -1290,24 +1374,29 @@ class st98sign(_PluginBase):
                         {'component': 'VCol', 'props': {'cols': 12, 'sm': 6, 'md': 3}, 'content': [
                             {'component': 'div', 'props': {'class': 'd-flex align-center'},
                              'content': [
-                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-calendar-check', 'color': today_sign_status_color}},
+                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-calendar-check',
+                                                                  'color': today_sign_status_color}},
                                  {'component': 'span', 'text': '今日签到: ', 'class': 'mr-1'},
-                                 {'component': 'VChip', 'props': {'color': today_sign_status_color, 'size': 'small', 'variant': 'tonal'}, 'text': today_sign_status}
+                                 {'component': 'VChip',
+                                  'props': {'color': today_sign_status_color, 'size': 'small', 'variant': 'tonal'},
+                                  'text': today_sign_status}
                              ]}
                         ]},
                         # 如果今日状态不是未执行，显示具体消息
                         *([{'component': 'VCol', 'props': {'cols': 12}, 'content': [
-                             {'component': 'div', 'props': {'class': 'd-flex align-center text-caption text-grey'},
-                              'content': [
-                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-message-outline', 'size': 'small'}},
+                            {'component': 'div', 'props': {'class': 'd-flex align-center text-caption text-grey'},
+                             'content': [
+                                 {'component': 'VIcon',
+                                  'props': {'start': True, 'icon': 'mdi-message-outline', 'size': 'small'}},
                                  {'component': 'span', 'text': f"今日消息: {today_sign_msg if today_sign_msg else '-'}"}
                              ]}
                         ]}] if today_sign_status != '未执行' else []),
                         # 上次成功签到
                         {'component': 'VCol', 'props': {'cols': 12}, 'content': [
-                             {'component': 'div', 'props': {'class': 'd-flex align-center text-caption text-grey'},
-                              'content': [
-                                 {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-history', 'size': 'small'}},
+                            {'component': 'div', 'props': {'class': 'd-flex align-center text-caption text-grey'},
+                             'content': [
+                                 {'component': 'VIcon',
+                                  'props': {'start': True, 'icon': 'mdi-history', 'size': 'small'}},
                                  {'component': 'span', 'text': f"上次成功签到时间: {last_success_sign_time}"}
                              ]}
                         ]},
@@ -1317,14 +1406,14 @@ class st98sign(_PluginBase):
         }
         page_components.append(summary_card)
 
-        # --- 2. 构建签到历史卡片 --- 
+        # --- 2. 构建签到历史卡片 ---
         if sign_history:
             sign_history_rows = []
-            for history in sign_history: # 已倒序
+            for history in sign_history:  # 已倒序
                 status_text = history.get("status", "未知")
                 status_color = "success" if status_text in ["签到成功", "已签到"] else \
-                               "error" if status_text in ["失败", "请求失败", "执行出错", "配置错误"] else \
-                               "info" if status_text == "跳过" else "warning"
+                    "error" if status_text in ["失败", "请求失败", "执行出错", "配置错误"] else \
+                        "info" if status_text == "跳过" else "warning"
                 full_message = history.get('message', '-')
                 display_message = (full_message[:25] + '...') if len(full_message) > 28 else full_message
 
@@ -1333,7 +1422,9 @@ class st98sign(_PluginBase):
                     'content': [
                         {'component': 'td', 'props': {'class': 'text-caption'}, 'text': history.get("date", "-")},
                         {'component': 'td', 'text': history.get('username', '-')},
-                        {'component': 'td', 'content': [{'component': 'VChip', 'props': {'color': status_color, 'size': 'small', 'variant': 'outlined'}, 'text': status_text}]},
+                        {'component': 'td', 'content': [{'component': 'VChip',
+                                                         'props': {'color': status_color, 'size': 'small',
+                                                                   'variant': 'outlined'}, 'text': status_text}]},
                         {'component': 'td', 'text': display_message, 'attrs': {'title': full_message}},
                         {
                             'component': 'td',
@@ -1343,7 +1434,7 @@ class st98sign(_PluginBase):
                         {'component': 'td', 'props': {'class': 'text-caption'}, 'text': history.get("trigger", "-")}
                     ]
                 })
-            
+
             sign_table = {
                 'component': 'VTable',
                 'props': {'hover': True, 'density': 'compact'},
@@ -1372,11 +1463,12 @@ class st98sign(_PluginBase):
                     {'component': 'VCardTitle',
                      'text': '📅 签到历史',
                      'content': [
-                         {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-clipboard-text-clock-outline', 'color': 'blue-grey'}}
+                         {'component': 'VIcon',
+                          'props': {'start': True, 'icon': 'mdi-clipboard-text-clock-outline', 'color': 'blue-grey'}}
                      ]},
                     # 折叠面板容器
-                    {'component': 'VExpansionPanels', 
-                     'props': {'class': 'ma-0 pa-0'}, # 移除手风琴模式，允许同时展开；去除内外边距
+                    {'component': 'VExpansionPanels',
+                     'props': {'class': 'ma-0 pa-0'},  # 移除手风琴模式，允许同时展开；去除内外边距
                      'content': [
                          # 单个折叠面板
                          {'component': 'VExpansionPanel',
@@ -1384,14 +1476,14 @@ class st98sign(_PluginBase):
                               # 折叠面板的标题 (可点击)
                               {'component': 'VExpansionPanelTitle', 'text': '点击展开/隐藏记录'},
                               # 折叠面板的内容
-                              {'component': 'VExpansionPanelText', 'props': {'class': 'pa-0'}, # 移除内边距
-                               'content': [sign_table] # 表格放在折叠内容里
-                              }
+                              {'component': 'VExpansionPanelText', 'props': {'class': 'pa-0'},  # 移除内边距
+                               'content': [sign_table]  # 表格放在折叠内容里
+                               }
                           ]}
                      ]}
                 ]
             }
-            page_components.append(sign_history_card) # <-- 修正：添加签到历史卡片
+            page_components.append(sign_history_card)  # <-- 修正：添加签到历史卡片
         else:
             # 如果没有签到历史，显示提示信息
             page_components.append({
@@ -1402,24 +1494,28 @@ class st98sign(_PluginBase):
                 }
             })
 
-        # --- 3. 构建回复历史卡片 --- 
+        # --- 3. 构建回复历史卡片 ---
         if reply_history:
             reply_history_rows = []
-            for history in reply_history: # 已倒序
+            for history in reply_history:  # 已倒序
                 status_text = history.get("status", "未知")
                 status_color = "success" if status_text == "回复成功" else \
-                               "error" if status_text in ["失败", "请求失败", "执行出错", "配置错误"] else \
-                               "info" if status_text == "跳过" else "warning"
+                    "error" if status_text in ["失败", "请求失败", "执行出错", "配置错误"] else \
+                        "info" if status_text == "跳过" else "warning"
                 full_status_message = history.get('message', '-')
-                display_status_message = (full_status_message[:20] + '...') if len(full_status_message) > 23 else full_status_message
+                display_status_message = (full_status_message[:20] + '...') if len(
+                    full_status_message) > 23 else full_status_message
                 full_reply_content = history.get('reply_content', '-')
-                display_reply_content = (full_reply_content[:20] + '...') if len(full_reply_content) > 23 else full_reply_content
-                
+                display_reply_content = (full_reply_content[:20] + '...') if len(
+                    full_reply_content) > 23 else full_reply_content
+
                 reply_history_rows.append({
                     'component': 'tr',
                     'content': [
                         {'component': 'td', 'props': {'class': 'text-caption'}, 'text': history.get("date", "-")},
-                        {'component': 'td', 'content': [{'component': 'VChip', 'props': {'color': status_color, 'size': 'small', 'variant': 'outlined'}, 'text': status_text}]},
+                        {'component': 'td', 'content': [{'component': 'VChip',
+                                                         'props': {'color': status_color, 'size': 'small',
+                                                                   'variant': 'outlined'}, 'text': status_text}]},
                         {'component': 'td', 'text': display_status_message, 'attrs': {'title': full_status_message}},
                         {'component': 'td', 'props': {'class': 'text-caption'}, 'text': history.get("trigger", "-")},
                         {'component': 'td', 'text': history.get('tid', '-')},
@@ -1450,30 +1546,31 @@ class st98sign(_PluginBase):
                 'component': 'VCard',
                 'props': {'variant': 'outlined', 'class': 'mb-4'},
                 'content': [
-                     # 卡片标题
+                    # 卡片标题
                     {'component': 'VCardTitle',
-                     'text': '💬 回复历史', 
+                     'text': '💬 回复历史',
                      'content': [
-                         {'component': 'VIcon', 'props': {'start': True, 'icon': 'mdi-message-reply-text-outline', 'color': 'teal'}}
+                         {'component': 'VIcon',
+                          'props': {'start': True, 'icon': 'mdi-message-reply-text-outline', 'color': 'teal'}}
                      ]},
-                     # 折叠面板容器 (与签到历史保持一致)
-                    {'component': 'VExpansionPanels', 
-                     'props': {'class': 'ma-0 pa-0'}, # 移除 accordion, 去除内外边距
+                    # 折叠面板容器 (与签到历史保持一致)
+                    {'component': 'VExpansionPanels',
+                     'props': {'class': 'ma-0 pa-0'},  # 移除 accordion, 去除内外边距
                      'content': [
                          # 单个折叠面板
                          {'component': 'VExpansionPanel',
                           'content': [
                               # 折叠面板的标题 (可点击)
-                              {'component': 'VExpansionPanelTitle', 'text': '点击展开/隐藏记录'}, # <-- 修复：添加标题
+                              {'component': 'VExpansionPanelTitle', 'text': '点击展开/隐藏记录'},  # <-- 修复：添加标题
                               # 折叠面板的内容
-                              {'component': 'VExpansionPanelText', 'props': {'class': 'pa-0'}, # 移除内边距
-                               'content': [reply_table] # 表格放在折叠内容里
-                              }
+                              {'component': 'VExpansionPanelText', 'props': {'class': 'pa-0'},  # 移除内边距
+                               'content': [reply_table]  # 表格放在折叠内容里
+                               }
                           ]}
                      ]}
                 ]
             }
-            page_components.append(reply_history_card) # <-- 修正：添加回复历史卡片
+            page_components.append(reply_history_card)  # <-- 修正：添加回复历史卡片
         else:
             # 如果没有回复历史，显示提示信息
             page_components.append({
@@ -1486,17 +1583,17 @@ class st98sign(_PluginBase):
 
         # 如果完全没有历史记录 (也处理一下，虽然前面有检查，但更保险)
         if not sign_history and not reply_history:
-             return [
-                 {
-                     'component': 'VAlert',
-                     'props': {
-                         'type': 'info', 'variant': 'tonal',
-                         'text': '暂无任何签到或回复记录', 'class': 'mb-2'
-                     }
-                 }
-             ]
+            return [
+                {
+                    'component': 'VAlert',
+                    'props': {
+                        'type': 'info', 'variant': 'tonal',
+                        'text': '暂无任何签到或回复记录', 'class': 'mb-2'
+                    }
+                }
+            ]
 
-        logger.debug(f"[get_page] Returning {len(page_components)} components.") # 诊断日志
+        logger.debug(f"[get_page] Returning {len(page_components)} components.")  # 诊断日志
         return page_components
 
     def stop_service(self):
@@ -1544,7 +1641,8 @@ class st98sign(_PluginBase):
                 html += f"<td>{record.get('date', '-')}</td>"
                 html += f"<td>{record.get('username', '-')}</td>"
                 status = record.get('status', '未知')
-                status_color = 'green' if status in ['签到成功', '已签到'] else ('blue' if status == '跳过' else ('orange' if status in ['回复过快', '等待审核'] else 'red'))
+                status_color = 'green' if status in ['签到成功', '已签到'] else (
+                    'blue' if status == '跳过' else ('orange' if status in ['回复过快', '等待审核'] else 'red'))
                 html += f"<td style='color:{status_color}'>{status}</td>"
                 html += f"<td>{record.get('message', '-')}</td>"
                 money_before = record.get('money_before', '?')
@@ -1556,7 +1654,7 @@ class st98sign(_PluginBase):
                 html += f"<td>{record.get('trigger', '-')}</td>"
                 html += "</tr>"
             html += "</table>"
-        
+
         html += "<h4>📊 回复历史记录</h4>"
         if not reply_history:
             html += "<p>暂无回复记录</p>"
@@ -1567,7 +1665,8 @@ class st98sign(_PluginBase):
                 html += f"<tr>"
                 html += f"<td>{record.get('date', '-')}</td>"
                 status = record.get('status', '未知')
-                status_color = 'green' if status == '回复成功' else ('blue' if status == '跳过' else ('orange' if status in ['回复过快', '等待审核'] else 'red'))
+                status_color = 'green' if status == '回复成功' else (
+                    'blue' if status == '跳过' else ('orange' if status in ['回复过快', '等待审核'] else 'red'))
                 html += f"<td style='color:{status_color}'>{status}</td>"
                 html += f"<td>{record.get('message', '-')}</td>"
                 html += f"<td>{record.get('trigger', '-')}</td>"
@@ -1575,7 +1674,7 @@ class st98sign(_PluginBase):
                 html += f"<td>{record.get('reply_content', '-')}</td>"
                 html += "</tr>"
             html += "</table>"
-            
+
         return html
 
     def get_api(self) -> List[Dict[str, Any]]:
@@ -1595,9 +1694,10 @@ class st98sign(_PluginBase):
                 "description": "立即执行一次回复",
                 "function": self.reply
             }
-        ] 
+        ]
 
-    # --- 辅助方法 ---
+        # --- 辅助方法 ---
+
     def _get_user_info(self, session: requests.Session, base_url: str, **kwargs) -> dict:
         """ 获取用户名、积分和金钱信息 """
         user_info = {"username": None, "points": None, "money": None}
@@ -1629,23 +1729,24 @@ class st98sign(_PluginBase):
                 else:
                     logger.warning(f"未能从积分链接文本 '{points_text}' 中解析出数字")
             else:
-                 # 提取积分 (方法二：通过 creditl 列表 - 作为备用)
-                 credit_items = soup.select('ul.creditl li')
-                 for item in credit_items:
-                     if '积分:' in item.text and '总积分' not in item.text: # 避免匹配到总积分行
-                         points_match = re.search(r'积分:\s*(\d+)', item.text)
-                         if points_match:
-                              try:
-                                 user_info["points"] = int(points_match.group(1))
-                                 logger.debug(f"提取到积分 (备用方法): {user_info['points']}")
-                                 break # 找到就跳出
-                              except ValueError:
-                                   logger.warning(f"无法将提取到的积分文本 (备用方法) '{points_match.group(1)}' 转换为数字")
-                 if user_info["points"] is None:
-                      logger.warning("未能从页面提取积分")
+                # 提取积分 (方法二：通过 creditl 列表 - 作为备用)
+                credit_items = soup.select('ul.creditl li')
+                for item in credit_items:
+                    if '积分:' in item.text and '总积分' not in item.text:  # 避免匹配到总积分行
+                        points_match = re.search(r'积分:\s*(\d+)', item.text)
+                        if points_match:
+                            try:
+                                user_info["points"] = int(points_match.group(1))
+                                logger.debug(f"提取到积分 (备用方法): {user_info['points']}")
+                                break  # 找到就跳出
+                            except ValueError:
+                                logger.warning(
+                                    f"无法将提取到的积分文本 (备用方法) '{points_match.group(1)}' 转换为数字")
+                if user_info["points"] is None:
+                    logger.warning("未能从页面提取积分")
 
             # 提取金钱
-            money_tag = soup.select_one('ul.creditl li.xi1') # 选择包含"金钱:"的那个 li
+            money_tag = soup.select_one('ul.creditl li.xi1')  # 选择包含"金钱:"的那个 li
             if money_tag:
                 money_text = money_tag.text.strip()
                 money_match = re.search(r'金钱:\s*(\d+)', money_text)
@@ -1680,7 +1781,8 @@ class st98sign(_PluginBase):
             valid_history = []
             for record in history:
                 try:
-                    record_date = datetime.strptime(record["date"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=pytz.timezone(settings.TZ))
+                    record_date = datetime.strptime(record["date"], '%Y-%m-%d %H:%M:%S').replace(
+                        tzinfo=pytz.timezone(settings.TZ))
                     if (now - record_date).days < self._history_days:
                         valid_history.append(record)
                 except (ValueError, KeyError, TypeError):
