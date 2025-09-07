@@ -848,6 +848,7 @@ class st98sign(_PluginBase):
 
             # 过滤掉版务管理帖子
             filtered_tids = []
+            mod_posts = []  # 记录版务管理帖子信息
             soup = BeautifulSoup(r.text, 'lxml')
             for tid in all_tids_on_page:
                 # 查找包含该tid的帖子行 - 根据HTML结构，需要查找tbody
@@ -856,9 +857,27 @@ class st98sign(_PluginBase):
                     # 在tbody内查找th标签，检查是否包含版务管理标识
                     th_element = thread_tbody.find('th')
                     if th_element and th_element.find('em') and '版务管理' in th_element.get_text():
-                        logger.debug(f"_reply_internal: 跳过版务管理帖子 tid={tid}")
+                        # 提取帖子标题
+                        title = "未知标题"
+                        try:
+                            title_link = th_element.find('a', class_='s xst')
+                            if title_link:
+                                title = title_link.get_text().strip()
+                        except:
+                            pass
+
+                        mod_posts.append({"tid": tid, "title": title})
+                        logger.info(f"_reply_internal: 跳过版务管理帖子 - TID: {tid}, 标题: {title}")
                         continue
                 filtered_tids.append(tid)
+
+            # 记录版务管理帖子统计信息
+            if mod_posts:
+                logger.info(f"_reply_internal: 发现 {len(mod_posts)} 个版务管理帖子，已过滤")
+                for post in mod_posts:
+                    logger.debug(f"_reply_internal: 版务管理帖子详情 - TID: {post['tid']}, 标题: {post['title']}")
+            else:
+                logger.debug("_reply_internal: 未发现版务管理帖子")
 
             if not filtered_tids:
                 logger.warning(f"在板块 fid={reply_fid} 过滤版务管理帖子后无可用帖子")
